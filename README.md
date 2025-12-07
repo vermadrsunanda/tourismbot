@@ -5,6 +5,7 @@ A secure, production-ready tourism chatbot powered by Mistral AI and Flask. This
 ## Features
 
 - **AI-Powered Chat**: Interact with Mistral AI for tourism-related queries
+- **🤖 AI Agent**: Autonomous agent that uses multiple tools to answer complex questions
 - **🎤 Voice Input/Output**: Speak queries and listen to AI responses
 - **Real-time Weather Data**: Current weather conditions for destinations
 - **✈️ Flight Search**: Search for flights between cities
@@ -234,6 +235,85 @@ Get popular attractions for a city.
         "Notre-Dame Cathedral"
     ],
     "success": true
+}
+```
+
+### 7. AI Agent - Submit Query
+**POST** `/api/agent/query`
+
+Submit a query to the AI agent. The agent autonomously decides which tools to use.
+
+**Request**:
+```json
+{
+    "query": "What's the weather like in Tokyo and what are the main attractions?"
+}
+```
+
+**Response**:
+```json
+{
+    "success": true,
+    "response": "Tokyo is an amazing destination...",
+    "tools_used": [
+        {
+            "tool": "weather",
+            "params": {"city": "Tokyo"},
+            "result": {"temperature": 15, "description": "Partly Cloudy"}
+        },
+        {
+            "tool": "attractions",
+            "params": {"city": "Tokyo"},
+            "result": {"attractions": ["Senso-ji Temple", "Meiji Shrine", "Tokyo Skytree"]}
+        }
+    ],
+    "iterations": 2
+}
+```
+
+### 8. AI Agent - Status
+**GET** `/api/agent/status`
+
+Get the current status and capabilities of the AI agent.
+
+**Response**:
+```json
+{
+    "status": "active",
+    "tools_available": ["weather", "flights", "attractions", "travel_tips", "chat"],
+    "max_iterations": 5,
+    "conversation_length": 3,
+    "tools_count": 4
+}
+```
+
+### 9. AI Agent - Conversation History
+**GET** `/api/agent/history`
+
+Get the agent's conversation history.
+
+**Response**:
+```json
+{
+    "success": true,
+    "history": [
+        {"role": "user", "content": "Tell me about Paris"},
+        {"role": "assistant", "content": "Paris is..."}
+    ],
+    "length": 2
+}
+```
+
+### 10. AI Agent - Reset
+**POST** `/api/agent/reset`
+
+Reset the agent's conversation history.
+
+**Response**:
+```json
+{
+    "success": true,
+    "message": "Agent reset successfully"
 }
 ```
 

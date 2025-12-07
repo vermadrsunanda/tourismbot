@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from src.mistral_client import MistralTourismBot
 from src.validators import validate_and_sanitize_input
 from src.external_apis import WeatherAPI, FlightAPI, TourismDataAPI
+from src.agent import TourismAgent
 
 # Load environment variables
 load_dotenv()
@@ -47,6 +48,14 @@ if 'weather_api' not in st.session_state:
     st.session_state.weather_api = WeatherAPI()
 if 'flight_api' not in st.session_state:
     st.session_state.flight_api = FlightAPI()
+if 'agent' not in st.session_state:
+    try:
+        st.session_state.agent = TourismAgent()
+    except Exception as e:
+        st.error(f"Failed to initialize agent: {str(e)}")
+        st.stop()
+if 'agent_messages' not in st.session_state:
+    st.session_state.agent_messages = []
 
 # Sidebar
 with st.sidebar:
@@ -73,79 +82,177 @@ with st.sidebar:
 st.title("🌍 Tourism Bot - Your AI Travel Assistant")
 st.markdown("Powered by Mistral AI | Real-time Weather & Flight Data")
 
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Create tabs for different views
+tab1, tab2 = st.tabs(["💬 Chat Assistant", "🤖 AI Agent"])
 
-# Chat input
-if user_input := st.chat_input("Ask me about travel destinations, tips, or attractions..."):
-    # Validate input
-    sanitized_input = validate_and_sanitize_input(user_input)
-    if not sanitized_input:
-        st.error("Invalid input. Please try again.")
-    else:
-        # Add user message to chat
-        st.session_state.messages.append({"role": "user", "content": sanitized_input})
-        
-        with st.chat_message("user"):
-            st.markdown(sanitized_input)
-        
-        # Generate bot response
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                try:
-                    response = st.session_state.bot.generate_tourism_response(sanitized_input)
-                    st.markdown(response)
-                    st.session_state.messages.append({"role": "assistant", "content": response})
+with tab1:
+    st.markdown("### Chat with our Tourism Assistant")
+    
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Chat input
+    if user_input := st.chat_input("Ask me about travel destinations, tips, or attractions..."):
+        # Validate input
+        sanitized_input = validate_and_sanitize_input(user_input)
+        if not sanitized_input:
+            st.error("Invalid input. Please try again.")
+        else:
+            # Add user message to chat
+            st.session_state.messages.append({"role": "user", "content": sanitized_input})
+            
+            with st.chat_message("user"):
+                st.markdown(sanitized_input)
+            
+            # Generate bot response
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    try:
+                        response = st.session_state.bot.generate_tourism_response(sanitized_input)
+                        st.markdown(response)
+                        st.session_state.messages.append({"role": "assistant", "content": response})
+                        
+                        # Extract destination and fetch additional data
+                        if any(word in sanitized_input.lower() for word in ['weather', 'flight', 'destination', 'travel to', 'visit']):
+                            st.divider()
+                            
+                            # Try to extract destination
+                            words = sanitized_input.split()
+                            destination = None
+                            
+                            if 'to' in words:
+                                idx = words.index('to')
+                                if idx < len(words) - 1:
+                                    destination = ' '.join(words[idx+1:])
+                            elif 'visit' in [w.lower() for w in words]:
+                                idx = [i for i, w in enumerate(words) if w.lower() == 'visit']
+                                if idx and idx[0] < len(words) - 1:
+                                    destination = ' '.join(words[idx[0]+1:])
+                            
+                            # Display additional information
+                            col1, col2, col3 = st.columns(3)
+                            
+                            if destination and show_weather:
+                                with col1:
+                                    st.subheader("🌤️ Weather")
+                                    weather = st.session_state.weather_api.get_weather(destination)
+                                    if weather:
+                                        st.metric("Temperature", f"{weather['temperature']}°C")
+                                        st.write(f"**Condition:** {weather['description']}")
+                                        st.write(f"**Humidity:** {weather['humidity']}%")
+                            
+                            if destination and show_flights:
+                                with col2:
+                                    st.subheader("✈️ Flights")
+                                    flights = st.session_state.flight_api.search_flights("NYC", destination)
+                                    if flights and flights.get('flights'):
+                                        for flight in flights['flights'][:2]:
+                                            st.write(f"**{flight['airline']}** - ${flight['price']}")
+                            
+                            if destination and show_attractions:
+                                with col3:
+                                    st.subheader("🎯 Attractions")
+                                    attractions = TourismDataAPI.get_popular_attractions(destination)
+                                    if attractions.get('attractions'):
+                                        for attraction in attractions['attractions'][:3]:
+                                            st.write(f"• {attraction}")
                     
-                    # Extract destination and fetch additional data
-                    if any(word in sanitized_input.lower() for word in ['weather', 'flight', 'destination', 'travel to', 'visit']):
-                        st.divider()
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
+
+with tab2:
+    st.markdown("### AI Agent - Autonomous Travel Planning")
+    st.markdown("""
+    The AI Agent independently uses multiple tools to answer your questions.
+    It can fetch weather, search for flights, and provide travel recommendations.
+    """)
+    
+    # Display agent conversation history
+    for msg in st.session_state.agent_messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            if "tools" in msg:
+                with st.expander(f"🔧 Tools Used ({len(msg['tools'])})"):
+                    for tool in msg["tools"]:
+                        st.json({
+                            "tool": tool.get("tool"),
+                            "status": "✅ Executed",
+                            "params": tool.get("params")
+                        })
+    
+    # Agent input
+    agent_input = st.chat_input("Ask the agent anything about travel...", key="agent_input")
+    
+    if agent_input:
+        sanitized_agent_input = validate_and_sanitize_input(agent_input)
+        if not sanitized_agent_input:
+            st.error("Invalid input. Please try again.")
+        else:
+            # Add user message
+            st.session_state.agent_messages.append({
+                "role": "user",
+                "content": sanitized_agent_input
+            })
+            
+            with st.chat_message("user"):
+                st.markdown(sanitized_agent_input)
+            
+            # Process with agent
+            with st.chat_message("assistant"):
+                with st.spinner("Agent is thinking and using tools..."):
+                    try:
+                        result = st.session_state.agent.agentic_loop(sanitized_agent_input)
                         
-                        # Try to extract destination
-                        words = sanitized_input.split()
-                        destination = None
+                        agent_response = result.get("response", "Sorry, I couldn't process that.")
+                        tools_used = result.get("tools_used", [])
+                        iterations = result.get("iterations", 0)
                         
-                        if 'to' in words:
-                            idx = words.index('to')
-                            if idx < len(words) - 1:
-                                destination = ' '.join(words[idx+1:])
-                        elif 'visit' in [w.lower() for w in words]:
-                            idx = [i for i, w in enumerate(words) if w.lower() == 'visit']
-                            if idx and idx[0] < len(words) - 1:
-                                destination = ' '.join(words[idx[0]+1:])
+                        st.markdown(agent_response)
                         
-                        # Display additional information
+                        # Store in history with tool info
+                        st.session_state.agent_messages.append({
+                            "role": "assistant",
+                            "content": agent_response,
+                            "tools": tools_used,
+                            "iterations": iterations
+                        })
+                        
+                        # Show agent execution details
                         col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Iterations", iterations)
+                        with col2:
+                            st.metric("Tools Used", len(tools_used))
+                        with col3:
+                            st.metric("Status", "✅ Complete")
                         
-                        if destination and show_weather:
-                            with col1:
-                                st.subheader("🌤️ Weather")
-                                weather = st.session_state.weather_api.get_weather(destination)
-                                if weather:
-                                    st.metric("Temperature", f"{weather['temperature']}°C")
-                                    st.write(f"**Condition:** {weather['description']}")
-                                    st.write(f"**Humidity:** {weather['humidity']}%")
-                        
-                        if destination and show_flights:
-                            with col2:
-                                st.subheader("✈️ Flights")
-                                flights = st.session_state.flight_api.search_flights("NYC", destination)
-                                if flights and flights.get('flights'):
-                                    for flight in flights['flights'][:2]:
-                                        st.write(f"**{flight['airline']}** - ${flight['price']}")
-                        
-                        if destination and show_attractions:
-                            with col3:
-                                st.subheader("🎯 Attractions")
-                                attractions = TourismDataAPI.get_popular_attractions(destination)
-                                if attractions.get('attractions'):
-                                    for attraction in attractions['attractions'][:3]:
-                                        st.write(f"• {attraction}")
-                
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                        # Show tool details if any
+                        if tools_used:
+                            st.divider()
+                            st.markdown("### 🔧 Tool Execution Details")
+                            for i, tool in enumerate(tools_used, 1):
+                                with st.expander(f"Tool {i}: {tool.get('tool')}"):
+                                    st.markdown(f"**Parameters:** {tool.get('params')}")
+                                    st.json(tool.get('result', {}))
+                    
+                    except Exception as e:
+                        st.error(f"Agent error: {str(e)}")
+    
+    # Agent controls
+    st.divider()
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🔄 Reset Conversation", key="agent_reset"):
+            st.session_state.agent_messages = []
+            st.session_state.agent.reset_conversation()
+            st.success("Agent conversation reset!")
+            st.rerun()
+    
+    with col2:
+        st.info(f"📊 Messages in history: {len(st.session_state.agent_messages)}")
 
 # Footer
 st.divider()

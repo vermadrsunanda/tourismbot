@@ -8,6 +8,7 @@
 | [QUICKSTART.md](QUICKSTART.md) | Get started in 5 minutes | 3 min |
 | [README.md](README.md) | Full project documentation | 10 min |
 | [FEATURES.md](FEATURES.md) | Feature guide & API examples | 15 min |
+| [AGENT.md](AGENT.md) | AI Agent guide & examples | 10 min |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy to cloud (3 options) | 20 min |
 | [COMMANDS.md](COMMANDS.md) | All commands reference | 10 min |
 
@@ -97,6 +98,13 @@
 - How it works: [FEATURES.md](FEATURES.md#4-attractions-guide-🎯)
 - API details: [README.md](README.md#6-attractions)
 - Test: [COMMANDS.md](COMMANDS.md#test-attractions-endpoint)
+
+### AI Agent (🤖) **NEW**
+- How it works: [AGENT.md](AGENT.md#how-the-agent-works)
+- API endpoints: [AGENT.md](AGENT.md#api-endpoints)
+- Examples: [AGENT.md](AGENT.md#examples)
+- REST APIs: [README.md](README.md#7-ai-agent---submit-query)
+- Troubleshoot: [AGENT.md](AGENT.md#troubleshooting)
 
 ### Streamlit
 - Setup: [FEATURES.md](FEATURES.md#5-streamlit-cloud-version)

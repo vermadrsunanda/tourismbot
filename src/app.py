@@ -9,6 +9,7 @@ from src.logger import setup_logger
 from src.mistral_client import MistralTourismBot
 from src.validators import validate_and_sanitize_input
 from src.external_apis import WeatherAPI, FlightAPI, TourismDataAPI
+from src.agent import TourismAgent
 
 # Get the project root directory
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,6 +36,9 @@ def init_app():
         # Initialize external APIs
         app.weather_api = WeatherAPI()
         app.flight_api = FlightAPI()
+        
+        # Initialize agent
+        app.tourism_agent = TourismAgent()
         
         return app
     except Exception as e:
@@ -253,6 +257,88 @@ def get_attractions():
     except Exception as e:
         logger.error(f"Error in attractions endpoint: {str(e)}")
         return jsonify({'error': 'An error occurred'}), 500
+
+
+@app.route('/api/agent/query', methods=['POST'])
+@require_json
+def agent_query():
+    """
+    Submit a query to the Tourism Agent.
+    The agent autonomously decides which tools to use.
+    
+    Expected JSON payload:
+    {
+        "query": "user's tourism question"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Invalid request'}), 400
+        
+        query = data.get('query', '').strip()
+        
+        # Validate and sanitize input
+        sanitized_query = validate_and_sanitize_input(query)
+        
+        if not sanitized_query:
+            logger.warning("Invalid query received by agent")
+            return jsonify({'error': 'Invalid query. Please try again.'}), 400
+        
+        logger.info(f"Agent processing query: {sanitized_query[:50]}...")
+        
+        # Process through agent
+        result = app.tourism_agent.agentic_loop(sanitized_query)
+        
+        return jsonify({
+            'success': result.get('success', False),
+            'response': result.get('response'),
+            'tools_used': result.get('tools_used', []),
+            'iterations': result.get('iterations', 0)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in agent query endpoint: {str(e)}")
+        return jsonify({'error': 'An error occurred while processing your query'}), 500
+
+
+@app.route('/api/agent/status', methods=['GET'])
+def agent_status():
+    """Get current status of the Tourism Agent."""
+    try:
+        status = app.tourism_agent.get_agent_status()
+        return jsonify(status), 200
+    except Exception as e:
+        logger.error(f"Error getting agent status: {str(e)}")
+        return jsonify({'error': 'Could not get agent status'}), 500
+
+
+@app.route('/api/agent/reset', methods=['POST'])
+def agent_reset():
+    """Reset the agent's conversation history."""
+    try:
+        app.tourism_agent.reset_conversation()
+        logger.info("Agent conversation history reset")
+        return jsonify({'success': True, 'message': 'Agent reset successfully'}), 200
+    except Exception as e:
+        logger.error(f"Error resetting agent: {str(e)}")
+        return jsonify({'error': 'Could not reset agent'}), 500
+
+
+@app.route('/api/agent/history', methods=['GET'])
+def agent_history():
+    """Get agent conversation history."""
+    try:
+        history = app.tourism_agent.get_conversation_history()
+        return jsonify({
+            'success': True,
+            'history': history,
+            'length': len(history)
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting agent history: {str(e)}")
+        return jsonify({'error': 'Could not get conversation history'}), 500
 
 
 @app.errorhandler(404)

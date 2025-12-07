@@ -8,6 +8,7 @@ __pycache__/
 dist/
 build/
 .env
+.env.local
 .DS_Store
 *.log
 .vscode/settings.json
@@ -16,3 +17,5 @@ build/
 htmlcov/
 instance/
 *.db
+.streamlit/secrets.toml
+node_modules/
