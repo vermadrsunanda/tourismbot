@@ -1,14 +1,46 @@
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
-║                    🌍 TOURISM BOT - ENHANCEMENT COMPLETE 🚀                    ║
+║                    🌍 TOURISM BOT - AGENT SYSTEM ADDED 🤖                      ║
 ║                                                                               ║
-║                            Version 2.0 - Production Ready                     ║
+║                            Version 2.1 - Production Ready                     ║
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📦 WHAT WAS ADDED
+📦 WHAT WAS ADDED IN V2.1
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ NEW: AI AGENT SYSTEM (🤖)
+   • Autonomous agent with 5 tools
+   • Agentic loop with max 5 iterations
+   • Intelligent tool selection via Mistral AI
+   • Tool result compilation into responses
+   • Full conversation history tracking
+   • Status monitoring and health checks
+
+✨ NEW: AGENT API ENDPOINTS (4 new routes)
+   • POST /api/agent/query - Submit queries
+   • GET /api/agent/status - Get agent info
+   • GET /api/agent/history - Get conversation
+   • POST /api/agent/reset - Reset state
+
+✨ NEW: STREAMLIT AGENT TAB
+   • Dual-interface: Chat + Agent
+   • Real-time tool visualization
+   • Expandable tool execution details
+   • Conversation history with tools used
+   • Agent controls (reset, metrics)
+
+✨ NEW: COMPREHENSIVE DOCUMENTATION
+   • AGENT.md (complete guide - 500+ lines)
+   • AGENT_RELEASE.md (release notes)
+   • Updated README with agent APIs
+   • Updated INDEX with agent links
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 EXISTING FEATURES (V2.0)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ VOICE INPUT/OUTPUT (🎤)
@@ -47,14 +79,20 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📁 NEW FILES CREATED
+📁 NEW FILES CREATED IN V2.1
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✨ SOURCE CODE
-  ├── src/external_apis.py         → Weather, Flight, Tourism APIs
-  └── streamlit_app.py             → Cloud-ready Streamlit version
+✨ AGENT SYSTEM
+  ├── src/agent.py                 → TourismAgent class (421 lines)
+  ├── test_agent.py                → Agent test suite
+  ├── AGENT.md                      → Agent documentation (500+ lines)
+  └── AGENT_RELEASE.md             → Agent release notes
 
-✨ DOCUMENTATION
+✨ SOURCE CODE (V2.0)
+  ├── src/external_apis.py         → Weather, Flight, Tourism APIs
+  └── streamlit_app.py             → Cloud-ready Streamlit version (now with agent)
+
+✨ DOCUMENTATION (V2.0)
   ├── INDEX.md                     → Main documentation index
   ├── FEATURES.md                  → Complete feature guide
   ├── DEPLOYMENT.md                → Cloud deployment guides
