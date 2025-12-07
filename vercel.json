@@ -1,0 +1,19 @@
+{
+  "buildCommand": "pip install -r requirements.txt",
+  "functions": {
+    "src/app.py": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "redirects": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://tourism-bot-api.vercel.app/api/:path*"
+    }
+  ],
+  "env": {
+    "MISTRAL_API_KEY": "@mistral_api_key",
+    "FLASK_ENV": "production"
+  }
+}
