@@ -5,13 +5,18 @@ Run with: streamlit run streamlit_app.py
 import streamlit as st
 import os
 from dotenv import load_dotenv
+
+# Load environment variables for local development
+load_dotenv()
+
+# Handle API key from Streamlit Secrets or environment
+if "MISTRAL_API_KEY" in st.secrets:
+    os.environ["MISTRAL_API_KEY"] = st.secrets["MISTRAL_API_KEY"]
+
 from src.mistral_client import MistralTourismBot
 from src.validators import validate_and_sanitize_input
 from src.external_apis import WeatherAPI, FlightAPI, TourismDataAPI
 from src.agent import TourismAgent
-
-# Load environment variables
-load_dotenv()
 
 # Configure Streamlit
 st.set_page_config(
@@ -40,6 +45,25 @@ if 'messages' not in st.session_state:
 if 'bot' not in st.session_state:
     try:
         st.session_state.bot = MistralTourismBot()
+    except ValueError as e:
+        if "MISTRAL_API_KEY" in str(e):
+            st.error("""
+            ❌ **API Key Missing!**
+            
+            To deploy this app, you need to add your Mistral API key to Streamlit Cloud secrets:
+            
+            1. Go to **App menu** (⋮) → **Settings** → **Secrets**
+            2. Add this line:
+               ```
+               MISTRAL_API_KEY = "your-actual-mistral-api-key"
+               ```
+            3. Click **Save** and the app will redeploy automatically
+            
+            Get your free API key: https://console.mistral.ai/api-keys/
+            """)
+        else:
+            st.error(f"Failed to initialize bot: {str(e)}")
+        st.stop()
     except Exception as e:
         st.error(f"Failed to initialize bot: {str(e)}")
         st.stop()
